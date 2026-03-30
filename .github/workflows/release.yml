@@ -16,10 +16,10 @@ jobs:
         include:
           - target: linux-x64
             os: ubuntu-latest
-            output: ai_sync-linux-x64
+            archive: ai_sync-linux-x64.tar.gz
           - target: macos-arm64
             os: macos-latest
-            output: ai_sync-macos-arm64
+            archive: ai_sync-macos-arm64.tar.gz
 
     runs-on: ${{ matrix.os }}
 
@@ -44,13 +44,16 @@ jobs:
         run: dart pub get
 
       - name: Build native binary
-        run: dart compile exe bin/ai_sync.dart -o ${{ matrix.output }}
+        run: dart compile exe bin/ai_sync.dart -o ai_sync
+
+      - name: Package release archive
+        run: tar -czf ${{ matrix.archive }} ai_sync
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.output }}
-          path: ${{ matrix.output }}
+          name: ${{ matrix.target }}
+          path: ${{ matrix.archive }}
 
   release:
     runs-on: ubuntu-latest
@@ -66,4 +69,4 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
+          files: dist/*.tar.gz

@@ -19,7 +19,7 @@ Requires Dart SDK ≥ 3.11 and [`just`](https://github.com/casey/just).
 
 ## Source directory layout
 
-Point `--source` at any directory that follows this structure:
+Pass `<source>` as the first argument, pointing to any directory that follows this structure:
 
 ```
 <source>/
@@ -96,7 +96,7 @@ ai_sync ~/shared-ai --type context --global
 
 | Mode      | Symlink path                      | Provider              |
 | --------- | --------------------------------- | --------------------- |
-| Workspace | `.GEMINI.md`                      | Gemini                |
+| Workspace | `GEMINI.md`                       | Gemini                |
 | Workspace | `.github/copilot-instructions.md` | Copilot               |
 | Workspace | `.claude/CLAUDE.md`               | Claude                |
 | Global    | `~/.gemini/GEMINI.md`             | Gemini + Antigravity  |
@@ -224,9 +224,9 @@ This ensures each PR is validated for analysis, correctness, and buildability.
 
 When a `v*` tag is pushed, the release workflow:
 
-1. Builds native binaries for `linux-x64` (`ai_sync-linux-x64`) and `macos-arm64` (`ai_sync-macos-arm64`)
-2. Uploads build artifacts
-3. Creates a GitHub Release and attaches both binaries
+1. Builds a native binary named `ai_sync` for each target platform (`linux-x64` and `macos-arm64`)
+2. Packages each binary as a platform archive: `ai_sync-linux-x64.tar.gz` and `ai_sync-macos-arm64.tar.gz`
+3. Creates a GitHub Release and attaches those `.tar.gz` assets
 
 To create a release:
 
