@@ -3,6 +3,7 @@ export 'src/core/file_utils.dart';
 export 'src/core/frontmatter.dart';
 export 'src/core/provider.dart';
 export 'src/core/source_paths.dart';
+export 'src/core/sync_mode.dart';
 export 'src/core/sync_type.dart';
 export 'src/models/agent_config.dart';
 export 'src/models/rule_config.dart';

@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../core/file_utils.dart';
 import '../core/provider.dart';
 import '../core/source_paths.dart';
+import '../core/sync_mode.dart';
 import '../models/rule_config.dart';
 
 final _log = Logger('rules_syncer');
@@ -31,28 +32,35 @@ final _log = Logger('rules_syncer');
 ///   Claude:      https://code.claude.com/docs/en/settings
 ///   Antigravity: no public docs; format inferred from .agents/rules/ conventions
 class RulesSyncer {
-  RulesSyncer(
-    this._source, {
-    Directory? rootDir,
-  }) : _rootDir = rootDir?.path ?? Directory.current.path;
+  RulesSyncer(this._source, {Directory? rootDir})
+    : _rootDir = rootDir?.path ?? Directory.current.path;
 
   final SourcePaths _source;
   final String _rootDir;
 
-  void run({required bool global, required Set<Provider> providers}) {
+  void run({
+    required bool global,
+    required Set<Provider> providers,
+    SyncMode mode = SyncMode.soft,
+  }) {
     if (!_source.hasRules) {
-      _log.warning('No rule files found in ${_source.rulesDir} — skipping rules sync.');
+      if (mode == SyncMode.hard) {
+        _cleanOutputDirs(global: global, providers: providers);
+        _removeEmptyOutputDirs(global: global, providers: providers);
+        _log.info('rules [hard]: removed stale output directories.');
+      } else {
+        _log.warning('No rule files found in ${_source.rulesDir} — skipping rules sync.');
+      }
       return;
     }
 
     _cleanOutputDirs(global: global, providers: providers);
 
-    final ruleFiles = Directory(_source.rulesDir)
-        .listSync()
-        .where((e) => e.path.endsWith('.md'))
-        .cast<File>()
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final ruleFiles =
+        Directory(
+            _source.rulesDir,
+          ).listSync().where((e) => e.path.endsWith('.md')).cast<File>().toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
     int generated = 0;
     for (final file in ruleFiles) {
@@ -61,7 +69,9 @@ class RulesSyncer {
       generated++;
     }
 
-    _log.info('rules: generated $generated rule(s) for ${_activeProviders(global, providers).map((p) => p.name).join(', ')}.');
+    _log.info(
+      'rules: generated $generated rule(s) for ${_activeProviders(global, providers).map((p) => p.name).join(', ')}.',
+    );
   }
 
   List<Provider> _activeProviders(bool global, Set<Provider> providers) {
@@ -84,6 +94,15 @@ class RulesSyncer {
     }
   }
 
+  void _removeEmptyOutputDirs({required bool global, required Set<Provider> providers}) {
+    for (final provider in Provider.values) {
+      if (!providers.contains(provider)) continue;
+      final dir = global ? provider.globalRulesDir() : provider.workspaceRulesDir(_rootDir);
+      if (dir == null) continue;
+      removeIfEmptyDirectory(dir);
+    }
+  }
+
   void _writeRule(RuleConfig rule, {required bool global, required Set<Provider> providers}) {
     for (final provider in Provider.values) {
       if (!providers.contains(provider)) continue;
@@ -98,19 +117,17 @@ class RulesSyncer {
     }
   }
 
-  String _outputPath(Provider provider, String dir, String name) =>
-      switch (provider) {
-        Provider.copilot => p.join(dir, '$name.instructions.md'),
-        _ => p.join(dir, '$name.md'),
-      };
+  String _outputPath(Provider provider, String dir, String name) => switch (provider) {
+    Provider.copilot => p.join(dir, '$name.instructions.md'),
+    _ => p.join(dir, '$name.md'),
+  };
 
-  String _buildContent(Provider provider, RuleConfig rule) =>
-      switch (provider) {
-        Provider.copilot => _copilotContent(rule),
-        Provider.antigravity => _antigravityContent(rule),
-        Provider.claude => _claudeContent(rule),
-        Provider.gemini => '', // Not supported; filtered out before calling
-      };
+  String _buildContent(Provider provider, RuleConfig rule) => switch (provider) {
+    Provider.copilot => _copilotContent(rule),
+    Provider.antigravity => _antigravityContent(rule),
+    Provider.claude => _claudeContent(rule),
+    Provider.gemini => '', // Not supported; filtered out before calling
+  };
 
   // ---------------------------------------------------------------------------
   // Copilot

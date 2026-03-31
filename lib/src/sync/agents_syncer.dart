@@ -7,6 +7,7 @@ import 'package:yaml/yaml.dart';
 import '../core/file_utils.dart';
 import '../core/provider.dart';
 import '../core/source_paths.dart';
+import '../core/sync_mode.dart';
 import '../models/agent_config.dart';
 import '../models/tool_mapping.dart';
 
@@ -31,11 +32,7 @@ const _claudeOnlyKeys = {
 
 // Gemini-specific frontmatter keys to strip from Copilot/Claude output.
 // Source: https://geminicli.com/docs/core/subagents/
-const _geminiOnlyKeys = {
-  'temperature',
-  'timeout_mins',
-  'kind',
-};
+const _geminiOnlyKeys = {'temperature', 'timeout_mins', 'kind'};
 
 /// Reads canonical agent files and generates provider-specific output.
 ///
@@ -60,28 +57,35 @@ const _geminiOnlyKeys = {
 ///   Gemini:  https://geminicli.com/docs/core/subagents/
 ///   Claude:  https://code.claude.com/docs/en/sub-agents
 class AgentsSyncer {
-  AgentsSyncer(
-    this._source, {
-    Directory? rootDir,
-  }) : _rootDir = rootDir?.path ?? Directory.current.path;
+  AgentsSyncer(this._source, {Directory? rootDir})
+    : _rootDir = rootDir?.path ?? Directory.current.path;
 
   final SourcePaths _source;
   final String _rootDir;
 
-  void run({required bool global, required Set<Provider> providers}) {
+  void run({
+    required bool global,
+    required Set<Provider> providers,
+    SyncMode mode = SyncMode.soft,
+  }) {
     if (!_source.hasAgents) {
-      _log.warning('No agent files found in ${_source.agentsDir} — skipping agents sync.');
+      if (mode == SyncMode.hard) {
+        _cleanOutputDirs(global: global, providers: providers);
+        _removeEmptyOutputDirs(global: global, providers: providers);
+        _log.info('agents [hard]: removed stale output directories.');
+      } else {
+        _log.warning('No agent files found in ${_source.agentsDir} — skipping agents sync.');
+      }
       return;
     }
 
     _cleanOutputDirs(global: global, providers: providers);
 
-    final agentFiles = Directory(_source.agentsDir)
-        .listSync()
-        .where((e) => e.path.endsWith('.md'))
-        .cast<File>()
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final agentFiles =
+        Directory(
+            _source.agentsDir,
+          ).listSync().where((e) => e.path.endsWith('.md')).cast<File>().toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
 
     int generated = 0;
     for (final file in agentFiles) {
@@ -102,6 +106,15 @@ class AgentsSyncer {
     }
   }
 
+  void _removeEmptyOutputDirs({required bool global, required Set<Provider> providers}) {
+    for (final provider in Provider.values) {
+      if (!providers.contains(provider)) continue;
+      final dir = global ? provider.globalAgentsDir() : provider.workspaceAgentsDir(_rootDir);
+      if (dir == null) continue;
+      removeIfEmptyDirectory(dir);
+    }
+  }
+
   void _writeAgent(AgentConfig agent, {required bool global, required Set<Provider> providers}) {
     for (final provider in Provider.values) {
       if (!providers.contains(provider)) continue;
@@ -109,7 +122,9 @@ class AgentsSyncer {
       if (dir == null) continue;
 
       ensureDirectory(dir);
-      final stem = p.basenameWithoutExtension(agent.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-'));
+      final stem = p.basenameWithoutExtension(
+        agent.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-'),
+      );
       final filePath = p.join(dir, '$stem.md');
       final content = _buildContent(provider, agent);
       writeFileString(filePath, content);
@@ -122,10 +137,10 @@ class AgentsSyncer {
   // Source: https://docs.github.com/en/copilot/reference/customization-cheat-sheet
   // ---------------------------------------------------------------------------
   String _copilotContent(AgentConfig agent) {
-    final strippedFrontmatter = _stripKeysFromRaw(
-      agent.rawFrontmatterText,
-      {..._claudeOnlyKeys, ..._geminiOnlyKeys},
-    );
+    final strippedFrontmatter = _stripKeysFromRaw(agent.rawFrontmatterText, {
+      ..._claudeOnlyKeys,
+      ..._geminiOnlyKeys,
+    });
     return '---\n$strippedFrontmatter\n---\n\n${agent.body}\n';
   }
 
@@ -187,13 +202,12 @@ class AgentsSyncer {
     return '---\n$frontmatter\n---\n\n${agent.body}\n';
   }
 
-  String _buildContent(Provider provider, AgentConfig agent) =>
-      switch (provider) {
-        Provider.copilot => _copilotContent(agent),
-        Provider.claude => _claudeContent(agent),
-        Provider.gemini => _geminiContent(agent),
-        Provider.antigravity => '', // Not supported; filtered out
-      };
+  String _buildContent(Provider provider, AgentConfig agent) => switch (provider) {
+    Provider.copilot => _copilotContent(agent),
+    Provider.claude => _claudeContent(agent),
+    Provider.gemini => _geminiContent(agent),
+    Provider.antigravity => '', // Not supported; filtered out
+  };
 
   // ---------------------------------------------------------------------------
   // Helpers

@@ -41,7 +41,7 @@ Missing subdirectories are skipped with a warning — only `CONTEXT.md` is requi
 ## Usage
 
 ```
-ai_sync <source> [--providers <list>] [--type <list>] [--global]
+ai_sync <source> [--providers <list>] [--type <list>] [--global] [--mode <mode>]
 
 Arguments:
   <source>              Path to canonical source directory (required)
@@ -52,6 +52,10 @@ Options:
   -t, --type            Comma-separated sync types (default: all)
                         Available: context, rules, skills, agents
   -g, --global          Write to provider global config dirs (~/) instead of workspace
+  -m, --mode            Sync mode (default: soft)
+                        soft: never deletes existing output (safe default)
+                        hard: removes stale output when source resource is deleted;
+                              also removes now-empty output directories
   -h, --help            Show usage
 ```
 
@@ -71,6 +75,9 @@ ai_sync ./shared-ai --type rules,context
 
 # Combine both
 ai_sync ./shared-ai --providers claude --type rules
+
+# Hard mode — delete stale outputs for resources removed from source
+ai_sync ./shared-ai --mode hard
 ```
 
 ### Global sync (`--global`)
@@ -86,6 +93,9 @@ ai_sync ~/shared-ai --providers claude --type rules --global
 
 # Sync only context globally for all providers
 ai_sync ~/shared-ai --type context --global
+
+# Hard mode — remove stale global outputs
+ai_sync ~/shared-ai --global --mode hard
 ```
 
 ---

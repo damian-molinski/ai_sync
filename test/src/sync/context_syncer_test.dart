@@ -11,8 +11,7 @@ void main() {
   setUp(() {
     tempRoot = Directory.systemTemp.createTempSync('ai_sync_context_test_root_');
     tempSource = Directory.systemTemp.createTempSync('ai_sync_context_test_source_');
-    File(p.join(tempSource.path, 'CONTEXT.md'))
-        .writeAsStringSync('# Shared Context');
+    File(p.join(tempSource.path, 'CONTEXT.md')).writeAsStringSync('# Shared Context');
   });
 
   tearDown(() {
@@ -43,11 +42,7 @@ void main() {
     test('symlinks point to absolute source CONTEXT.md', () {
       syncer.run(global: false, providers: Provider.values.toSet());
       final contextPath = p.join(tempSource.path, 'CONTEXT.md');
-      for (final relPath in [
-        'GEMINI.md',
-        '.github/copilot-instructions.md',
-        '.claude/CLAUDE.md',
-      ]) {
+      for (final relPath in ['GEMINI.md', '.github/copilot-instructions.md', '.claude/CLAUDE.md']) {
         final linkPath = p.join(tempRoot.path, relPath);
         expect(Link(linkPath).targetSync(), equals(contextPath));
       }
@@ -56,18 +51,75 @@ void main() {
     test('re-running replaces existing symlinks without error', () {
       syncer.run(global: false, providers: Provider.values.toSet());
       syncer.run(global: false, providers: Provider.values.toSet());
-      expect(
-        FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')),
-        isTrue,
-      );
+      expect(FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')), isTrue);
     });
 
     test('logs warning and skips when CONTEXT.md is missing', () {
       File(p.join(tempSource.path, 'CONTEXT.md')).deleteSync();
       expect(() => syncer.run(global: false, providers: Provider.values.toSet()), returnsNormally);
+      expect(FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')), isFalse);
+    });
+  });
+
+  group('ContextSyncer hard mode', () {
+    late ContextSyncer syncer;
+
+    setUp(() {
+      final source = SourcePaths(tempSource.path);
+      syncer = ContextSyncer(source, rootDir: tempRoot);
+    });
+
+    test('removes stale symlinks when CONTEXT.md deleted in hard mode', () {
+      // Initial sync creates symlinks.
+      syncer.run(global: false, providers: Provider.values.toSet());
+      expect(FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')), isTrue);
+
+      // Delete source and re-run in hard mode.
+      File(p.join(tempSource.path, 'CONTEXT.md')).deleteSync();
+      syncer.run(global: false, providers: Provider.values.toSet(), mode: SyncMode.hard);
+
       expect(
         FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')),
         isFalse,
+        reason: 'hard mode should delete the stale symlink',
+      );
+      expect(FileSystemEntity.isLinkSync(p.join(tempRoot.path, 'GEMINI.md')), isFalse);
+      expect(
+        FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.github', 'copilot-instructions.md')),
+        isFalse,
+      );
+    });
+
+    test('soft mode leaves symlinks intact when CONTEXT.md deleted', () {
+      syncer.run(global: false, providers: Provider.values.toSet());
+      File(p.join(tempSource.path, 'CONTEXT.md')).deleteSync();
+
+      // Default soft mode — symlinks must remain.
+      syncer.run(global: false, providers: Provider.values.toSet());
+
+      expect(
+        FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')),
+        isTrue,
+        reason: 'soft mode must not remove existing symlinks',
+      );
+    });
+
+    test('hard mode only removes symlinks for requested providers', () {
+      syncer.run(global: false, providers: Provider.values.toSet());
+      File(p.join(tempSource.path, 'CONTEXT.md')).deleteSync();
+
+      syncer.run(global: false, providers: {Provider.claude}, mode: SyncMode.hard);
+
+      expect(
+        FileSystemEntity.isLinkSync(p.join(tempRoot.path, '.claude', 'CLAUDE.md')),
+        isFalse,
+        reason: 'claude symlink should be removed',
+      );
+      // Gemini was not in the providers set — its symlink should remain.
+      expect(
+        FileSystemEntity.isLinkSync(p.join(tempRoot.path, 'GEMINI.md')),
+        isTrue,
+        reason: 'gemini symlink not in providers set should be left intact',
       );
     });
   });
