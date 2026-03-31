@@ -7,8 +7,7 @@ import 'package:path/path.dart' as p;
 /// All paths are resolved to **absolute** paths on construction so that
 /// symlink targets are always absolute regardless of CWD at call time.
 class SourcePaths {
-  SourcePaths(String sourcePath)
-      : baseDir = p.normalize(p.absolute(sourcePath)) {
+  SourcePaths(String sourcePath) : baseDir = p.normalize(p.absolute(sourcePath)) {
     if (!Directory(baseDir).existsSync()) {
       throw ArgumentError('Source directory does not exist: $baseDir');
     }
@@ -32,22 +31,19 @@ class SourcePaths {
   /// Whether the `rules/` subdirectory exists and is non-empty.
   bool get hasRules {
     final dir = Directory(rulesDir);
-    return dir.existsSync() &&
-        dir.listSync().any((e) => e.path.endsWith('.md'));
+    return dir.existsSync() && dir.listSync().any((e) => e.path.endsWith('.md'));
   }
 
   /// Whether the `agents/` subdirectory exists and is non-empty.
   bool get hasAgents {
     final dir = Directory(agentsDir);
-    return dir.existsSync() &&
-        dir.listSync().any((e) => e.path.endsWith('.md'));
+    return dir.existsSync() && dir.listSync().any((e) => e.path.endsWith('.md'));
   }
 
   /// Whether the `skills/` subdirectory exists and has any subdirectories.
   bool get hasSkills {
     final dir = Directory(skillsDir);
-    return dir.existsSync() &&
-        dir.listSync().any((e) => e is Directory);
+    return dir.existsSync() && dir.listSync().any((e) => e is Directory);
   }
 
   /// Whether the `CONTEXT.md` instructions file exists.
