@@ -15,8 +15,9 @@ void main() {
     final fixturesDir = Directory(p.join('test', 'fixtures', 'agents'));
     final agentsDestDir = Directory(p.join(tempSource.path, 'agents'))..createSync();
     for (final file in fixturesDir.listSync().whereType<File>()) {
-      File(p.join(agentsDestDir.path, p.basename(file.path)))
-          .writeAsStringSync(file.readAsStringSync());
+      File(
+        p.join(agentsDestDir.path, p.basename(file.path)),
+      ).writeAsStringSync(file.readAsStringSync());
     }
     File(p.join(tempSource.path, 'CONTEXT.md')).writeAsStringSync('# Context');
   });
@@ -48,7 +49,9 @@ void main() {
 
     test('Copilot output strips Claude-only fields', () {
       syncer.run(global: false, providers: Provider.values.toSet());
-      final file = File(p.join(tempRoot.path, '.github', 'agents', 'flutter-feasibility-assessor.md'));
+      final file = File(
+        p.join(tempRoot.path, '.github', 'agents', 'flutter-feasibility-assessor.md'),
+      );
       final content = file.readAsStringSync();
       expect(content, isNot(contains('model:')));
       expect(content, isNot(contains('permissionMode:')));
@@ -73,7 +76,9 @@ void main() {
 
     test('Claude output retains Claude-only fields from MCP agent', () {
       syncer.run(global: false, providers: Provider.values.toSet());
-      final file = File(p.join(tempRoot.path, '.claude', 'agents', 'flutter-feasibility-assessor.md'));
+      final file = File(
+        p.join(tempRoot.path, '.claude', 'agents', 'flutter-feasibility-assessor.md'),
+      );
       final content = file.readAsStringSync();
       expect(content, contains('model: claude-sonnet-4-6'));
       expect(content, contains('permissionMode: acceptEdits'));
@@ -82,7 +87,9 @@ void main() {
 
     test('Claude output maps read + search + MCP tools', () {
       syncer.run(global: false, providers: Provider.values.toSet());
-      final file = File(p.join(tempRoot.path, '.claude', 'agents', 'flutter-feasibility-assessor.md'));
+      final file = File(
+        p.join(tempRoot.path, '.claude', 'agents', 'flutter-feasibility-assessor.md'),
+      );
       final content = file.readAsStringSync();
       expect(content, contains('Read'));
       expect(content, contains('Grep'));
@@ -110,6 +117,57 @@ void main() {
       syncer.run(global: false, providers: Provider.values.toSet());
       final antigravityDir = Directory(p.join(tempRoot.path, '.agents', 'agents'));
       expect(antigravityDir.existsSync(), isFalse);
+    });
+  });
+
+  group('AgentsSyncer hard mode', () {
+    late AgentsSyncer syncer;
+
+    setUp(() {
+      final source = SourcePaths(tempSource.path);
+      syncer = AgentsSyncer(source, rootDir: tempRoot);
+    });
+
+    test('cleans output dirs and removes them when all agents deleted in hard mode', () {
+      syncer.run(global: false, providers: {Provider.copilot, Provider.claude, Provider.gemini});
+
+      final copilotDir = Directory(p.join(tempRoot.path, '.github', 'agents'));
+      final claudeDir = Directory(p.join(tempRoot.path, '.claude', 'agents'));
+      final geminiDir = Directory(p.join(tempRoot.path, '.gemini', 'agents'));
+      expect(copilotDir.existsSync(), isTrue);
+      expect(claudeDir.existsSync(), isTrue);
+      expect(geminiDir.existsSync(), isTrue);
+
+      // Delete all source agent files.
+      Directory(
+        p.join(tempSource.path, 'agents'),
+      ).listSync().whereType<File>().forEach((f) => f.deleteSync());
+
+      syncer.run(
+        global: false,
+        providers: {Provider.copilot, Provider.claude, Provider.gemini},
+        mode: SyncMode.hard,
+      );
+
+      expect(copilotDir.existsSync(), isFalse, reason: 'empty dir should be removed');
+      expect(claudeDir.existsSync(), isFalse, reason: 'empty dir should be removed');
+      expect(geminiDir.existsSync(), isFalse, reason: 'empty dir should be removed');
+    });
+
+    test('soft mode leaves output dirs intact when all agents deleted', () {
+      syncer.run(global: false, providers: {Provider.claude});
+
+      final claudeDir = Directory(p.join(tempRoot.path, '.claude', 'agents'));
+      expect(claudeDir.existsSync(), isTrue);
+
+      Directory(
+        p.join(tempSource.path, 'agents'),
+      ).listSync().whereType<File>().forEach((f) => f.deleteSync());
+
+      // Default soft mode — output should remain.
+      syncer.run(global: false, providers: {Provider.claude});
+
+      expect(claudeDir.existsSync(), isTrue, reason: 'soft mode must not remove existing output');
     });
   });
 }

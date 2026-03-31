@@ -32,8 +32,8 @@ void createSymlink(String targetPath, String linkPath) {
     FileSystemEntity.isLinkSync(linkPath)
         ? link.deleteSync()
         : FileSystemEntity.typeSync(linkPath) == FileSystemEntityType.directory
-            ? Directory(linkPath).deleteSync(recursive: true)
-            : File(linkPath).deleteSync();
+        ? Directory(linkPath).deleteSync(recursive: true)
+        : File(linkPath).deleteSync();
   }
   link.createSync(targetPath);
 }
@@ -42,4 +42,28 @@ void createSymlink(String targetPath, String linkPath) {
 void writeFileString(String filePath, String content) {
   ensureDirectory(File(filePath).parent.path);
   File(filePath).writeAsStringSync(content);
+}
+
+/// Deletes the file, directory, or symlink at [path] if it exists.
+///
+/// For directories, deletes recursively. For symlinks, deletes the link itself
+/// without following it.
+void deleteIfExists(String path) {
+  if (FileSystemEntity.isLinkSync(path)) {
+    Link(path).deleteSync();
+  } else if (File(path).existsSync()) {
+    File(path).deleteSync();
+  } else if (Directory(path).existsSync()) {
+    Directory(path).deleteSync(recursive: true);
+  }
+}
+
+/// Deletes [dirPath] if it exists and is empty.
+///
+/// Does nothing if the directory does not exist or still has entries.
+void removeIfEmptyDirectory(String dirPath) {
+  final dir = Directory(dirPath);
+  if (dir.existsSync() && dir.listSync().isEmpty) {
+    dir.deleteSync();
+  }
 }

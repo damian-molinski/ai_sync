@@ -41,11 +41,7 @@ class Frontmatter {
 
     // Must start with a `---` delimiter to have frontmatter.
     if (lines.isEmpty || lines[0].trim() != '---') {
-      return Frontmatter(
-        rawFrontmatterText: '',
-        rawFields: {},
-        body: content.trim(),
-      );
+      return Frontmatter(rawFrontmatterText: '', rawFields: {}, body: content.trim());
     }
 
     // Find closing `---`.
@@ -59,11 +55,7 @@ class Frontmatter {
 
     if (closeIndex == -1) {
       // No closing delimiter — treat whole content as body.
-      return Frontmatter(
-        rawFrontmatterText: '',
-        rawFields: {},
-        body: content.trim(),
-      );
+      return Frontmatter(rawFrontmatterText: '', rawFields: {}, body: content.trim());
     }
 
     final rawFrontmatterText = lines.sublist(1, closeIndex).join('\n');
@@ -77,11 +69,7 @@ class Frontmatter {
       }
     }
 
-    return Frontmatter(
-      rawFrontmatterText: rawFrontmatterText,
-      rawFields: rawFields,
-      body: body,
-    );
+    return Frontmatter(rawFrontmatterText: rawFrontmatterText, rawFields: rawFields, body: body);
   }
 
   /// Returns the string value for [key], or null if absent or not a string.

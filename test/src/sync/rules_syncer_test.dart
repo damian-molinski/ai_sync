@@ -16,8 +16,9 @@ void main() {
     final fixturesDir = Directory(p.join('test', 'fixtures', 'rules'));
     final rulesDestDir = Directory(p.join(tempSource.path, 'rules'))..createSync();
     for (final file in fixturesDir.listSync().whereType<File>()) {
-      File(p.join(rulesDestDir.path, p.basename(file.path)))
-          .writeAsStringSync(file.readAsStringSync());
+      File(
+        p.join(rulesDestDir.path, p.basename(file.path)),
+      ).writeAsStringSync(file.readAsStringSync());
     }
     File(p.join(tempSource.path, 'CONTEXT.md')).writeAsStringSync('# Context');
   });
@@ -37,7 +38,9 @@ void main() {
 
     test('generates Copilot always-on rule with applyTo: "**"', () {
       syncer.run(global: false, providers: Provider.values.toSet());
-      final file = File(p.join(tempRoot.path, '.github', 'instructions', 'security-and-env.instructions.md'));
+      final file = File(
+        p.join(tempRoot.path, '.github', 'instructions', 'security-and-env.instructions.md'),
+      );
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
       expect(content, contains('applyTo: "**"'));
@@ -46,7 +49,9 @@ void main() {
 
     test('generates Copilot path-scoped rule with applyTo glob', () {
       syncer.run(global: false, providers: Provider.values.toSet());
-      final file = File(p.join(tempRoot.path, '.github', 'instructions', 'drift-columns.instructions.md'));
+      final file = File(
+        p.join(tempRoot.path, '.github', 'instructions', 'drift-columns.instructions.md'),
+      );
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
       expect(content, contains('applyTo: "**/database/tables/*.dart, **/database/daos/*.dart"'));
@@ -111,6 +116,54 @@ void main() {
       syncer.run(global: false, providers: Provider.values.toSet());
 
       expect(FileSystemEntity.isLinkSync(symlinkPath), isTrue);
+    });
+  });
+
+  group('RulesSyncer hard mode', () {
+    late RulesSyncer syncer;
+
+    setUp(() {
+      final source = SourcePaths(tempSource.path);
+      syncer = RulesSyncer(source, rootDir: tempRoot);
+    });
+
+    test('cleans output dirs and removes them when all rules deleted in hard mode', () {
+      syncer.run(global: false, providers: {Provider.copilot, Provider.claude});
+
+      final copilotDir = Directory(p.join(tempRoot.path, '.github', 'instructions'));
+      final claudeDir = Directory(p.join(tempRoot.path, '.claude', 'rules'));
+      expect(copilotDir.existsSync(), isTrue);
+      expect(claudeDir.existsSync(), isTrue);
+
+      // Delete all source rules.
+      Directory(
+        p.join(tempSource.path, 'rules'),
+      ).listSync().whereType<File>().forEach((f) => f.deleteSync());
+
+      syncer.run(
+        global: false,
+        providers: {Provider.copilot, Provider.claude},
+        mode: SyncMode.hard,
+      );
+
+      expect(copilotDir.existsSync(), isFalse, reason: 'empty dir should be removed');
+      expect(claudeDir.existsSync(), isFalse, reason: 'empty dir should be removed');
+    });
+
+    test('soft mode leaves output dirs intact when all rules deleted', () {
+      syncer.run(global: false, providers: {Provider.claude});
+
+      final claudeDir = Directory(p.join(tempRoot.path, '.claude', 'rules'));
+      expect(claudeDir.existsSync(), isTrue);
+
+      Directory(
+        p.join(tempSource.path, 'rules'),
+      ).listSync().whereType<File>().forEach((f) => f.deleteSync());
+
+      // Default soft mode — output should remain.
+      syncer.run(global: false, providers: {Provider.claude});
+
+      expect(claudeDir.existsSync(), isTrue, reason: 'soft mode must not remove existing output');
     });
   });
 }

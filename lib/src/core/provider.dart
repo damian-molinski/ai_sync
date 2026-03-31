@@ -18,18 +18,15 @@ enum Provider {
   /// Parses a provider name string (case-insensitive) to a [Provider] value.
   /// Throws [ArgumentError] for unknown names.
   static Provider fromName(String name) => switch (name.toLowerCase().trim()) {
-        'copilot' => Provider.copilot,
-        'claude' => Provider.claude,
-        'gemini' => Provider.gemini,
-        'antigravity' => Provider.antigravity,
-        _ => throw ArgumentError(
-            'Unknown provider "$name". Valid providers: $allNames',
-          ),
-      };
+    'copilot' => Provider.copilot,
+    'claude' => Provider.claude,
+    'gemini' => Provider.gemini,
+    'antigravity' => Provider.antigravity,
+    _ => throw ArgumentError('Unknown provider "$name". Valid providers: $allNames'),
+  };
 
   /// Comma-separated list of all provider names, used in help and error text.
-  static String get allNames =>
-      Provider.values.map((p) => p.name).join(', ');
+  static String get allNames => Provider.values.map((p) => p.name).join(', ');
 
   // ---------------------------------------------------------------------------
   // Instructions (CONTEXT.md symlink destinations)
@@ -38,12 +35,11 @@ enum Provider {
   /// The symlink path for the instructions file in workspace mode, or null if
   /// this provider has no workspace instructions path.
   String? workspaceInstructionsPath(String rootDir) => switch (this) {
-        Provider.copilot =>
-          p.join(rootDir, '.github', 'copilot-instructions.md'),
-        Provider.claude => p.join(rootDir, '.claude', 'CLAUDE.md'),
-        Provider.gemini => p.join(rootDir, 'GEMINI.md'),
-        Provider.antigravity => null, // No workspace instructions path
-      };
+    Provider.copilot => p.join(rootDir, '.github', 'copilot-instructions.md'),
+    Provider.claude => p.join(rootDir, '.claude', 'CLAUDE.md'),
+    Provider.gemini => p.join(rootDir, 'GEMINI.md'),
+    Provider.antigravity => null, // No workspace instructions path
+  };
 
   /// The symlink path for the instructions file in global mode, or null if
   /// this provider has no global instructions path.
@@ -65,11 +61,11 @@ enum Provider {
   /// Output directory for generated rule files in workspace mode, or null if
   /// this provider does not support rules.
   String? workspaceRulesDir(String rootDir) => switch (this) {
-        Provider.copilot => p.join(rootDir, '.github', 'instructions'),
-        Provider.claude => p.join(rootDir, '.claude', 'rules'),
-        Provider.antigravity => p.join(rootDir, '.agents', 'rules'),
-        Provider.gemini => null, // Gemini CLI has no rules format
-      };
+    Provider.copilot => p.join(rootDir, '.github', 'instructions'),
+    Provider.claude => p.join(rootDir, '.claude', 'rules'),
+    Provider.antigravity => p.join(rootDir, '.agents', 'rules'),
+    Provider.gemini => null, // Gemini CLI has no rules format
+  };
 
   /// Output directory for generated rule files in global mode, or null if
   /// this provider does not support global rules.
@@ -89,11 +85,11 @@ enum Provider {
 
   /// Output directory for skill directory symlinks in workspace mode.
   String workspaceSkillsDir(String rootDir) => switch (this) {
-        Provider.copilot => p.join(rootDir, '.github', 'skills'),
-        Provider.claude => p.join(rootDir, '.claude', 'skills'),
-        Provider.gemini => p.join(rootDir, '.gemini', 'skills'),
-        Provider.antigravity => p.join(rootDir, '.agents', 'skills'),
-      };
+    Provider.copilot => p.join(rootDir, '.github', 'skills'),
+    Provider.claude => p.join(rootDir, '.claude', 'skills'),
+    Provider.gemini => p.join(rootDir, '.gemini', 'skills'),
+    Provider.antigravity => p.join(rootDir, '.agents', 'skills'),
+  };
 
   /// Output directory for skill directory symlinks in global mode.
   String globalSkillsDir() {
@@ -114,11 +110,11 @@ enum Provider {
   /// Output directory for generated agent files in workspace mode, or null if
   /// this provider does not support agents.
   String? workspaceAgentsDir(String rootDir) => switch (this) {
-        Provider.copilot => p.join(rootDir, '.github', 'agents'),
-        Provider.claude => p.join(rootDir, '.claude', 'agents'),
-        Provider.gemini => p.join(rootDir, '.gemini', 'agents'),
-        Provider.antigravity => null, // No agent format for Antigravity
-      };
+    Provider.copilot => p.join(rootDir, '.github', 'agents'),
+    Provider.claude => p.join(rootDir, '.claude', 'agents'),
+    Provider.gemini => p.join(rootDir, '.gemini', 'agents'),
+    Provider.antigravity => null, // No agent format for Antigravity
+  };
 
   /// Output directory for generated agent files in global mode, or null if
   /// this provider does not support global agents.

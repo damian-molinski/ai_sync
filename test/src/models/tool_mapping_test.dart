@@ -23,10 +23,7 @@ void main() {
   });
 
   group('buildClaudeToolsList', () {
-    AgentConfig makeAgent({
-      List<String> tools = const [],
-      List<String> agents = const [],
-    }) =>
+    AgentConfig makeAgent({List<String> tools = const [], List<String> agents = const []}) =>
         AgentConfig(
           name: 'test',
           description: null,
@@ -42,10 +39,7 @@ void main() {
     });
 
     test('merges agents as Agent(name)', () {
-      final config = makeAgent(
-        tools: ['agent'],
-        agents: ['Critic', 'Planner'],
-      );
+      final config = makeAgent(tools: ['agent'], agents: ['Critic', 'Planner']);
       // generic `agent` suppressed when agents list is present
       expect(buildClaudeToolsList(config), equals(['Agent(Critic)', 'Agent(Planner)']));
     });
@@ -62,10 +56,7 @@ void main() {
 
     test('passes through MCP tools', () {
       final config = makeAgent(tools: ['dart-sdk-mcp-server/pub_dev_search']);
-      expect(
-        buildClaudeToolsList(config),
-        equals(['dart-sdk-mcp-server/pub_dev_search']),
-      );
+      expect(buildClaudeToolsList(config), equals(['dart-sdk-mcp-server/pub_dev_search']));
     });
   });
 }

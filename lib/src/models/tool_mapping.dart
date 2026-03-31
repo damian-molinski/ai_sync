@@ -15,13 +15,13 @@ import 'agent_config.dart';
 
 /// Maps a single canonical tool name to zero or more Claude Code tool names.
 List<String> mapToolToClaude(String canonical) => switch (canonical) {
-      'read' => ['Read'],
-      'search' => ['Grep', 'Glob'],
-      'web' => ['WebFetch'],
-      'agent' => ['Agent'],
-      _ when canonical.startsWith('vscode/') => [],
-      _ => [canonical],
-    };
+  'read' => ['Read'],
+  'search' => ['Grep', 'Glob'],
+  'web' => ['WebFetch'],
+  'agent' => ['Agent'],
+  _ when canonical.startsWith('vscode/') => [],
+  _ => [canonical],
+};
 
 /// Builds the final Claude `tools` list for [config].
 ///

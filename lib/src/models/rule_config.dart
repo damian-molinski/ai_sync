@@ -20,11 +20,7 @@ import '../core/frontmatter.dart';
 /// Rules with no `paths` (or an empty `paths` list) are **always-on** and
 /// apply unconditionally to all files.
 class RuleConfig {
-  const RuleConfig({
-    required this.name,
-    required this.paths,
-    required this.body,
-  });
+  const RuleConfig({required this.name, required this.paths, required this.body});
 
   /// Filename stem of the source file (e.g. `drift-columns` from `drift-columns.md`).
   final String name;
