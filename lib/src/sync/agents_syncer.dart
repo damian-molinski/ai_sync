@@ -128,7 +128,7 @@ class AgentsSyncer {
       final filePath = p.join(dir, '$stem.md');
       final content = _buildContent(provider, agent);
       writeFileString(filePath, content);
-      _log.info('  ${provider.name}: $filePath');
+      _log.fine('  ${provider.name}: $filePath');
     }
   }
 

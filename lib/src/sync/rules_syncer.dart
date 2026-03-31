@@ -113,7 +113,7 @@ class RulesSyncer {
       final filePath = _outputPath(provider, dir, rule.name);
       final content = _buildContent(provider, rule);
       writeFileString(filePath, content);
-      _log.info('  ${provider.name}: $filePath');
+      _log.fine('  ${provider.name}: $filePath');
     }
   }
 

@@ -93,7 +93,7 @@ class SkillsSyncer {
         final name = entry.uri.pathSegments.lastWhere((s) => s.isNotEmpty);
         if (!currentSkillNames.contains(name)) {
           deleteIfExists(entry.path);
-          _log.info('  ${provider.name}: removed stale skill $name');
+          _log.fine('  ${provider.name}: removed stale skill $name');
         }
       }
       removeIfEmptyDirectory(skillsDir);
@@ -123,7 +123,7 @@ class SkillsSyncer {
       ensureDirectory(skillsDir);
       final linkPath = '$skillsDir/$skillName';
       createSymlink(targetPath, linkPath);
-      _log.info('  ${provider.name}: $linkPath → $targetPath');
+      _log.fine('  ${provider.name}: $linkPath → $targetPath');
     }
   }
 }

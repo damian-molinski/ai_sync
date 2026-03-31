@@ -1,6 +1,24 @@
+import 'package:logging/logging.dart';
+
 import '../core/provider.dart';
 import '../core/sync_mode.dart';
 import '../core/sync_type.dart';
+
+/// Allowed log-level names exposed to the CLI user.
+///
+/// Maps lowercase name → [Level] constant.  Used both for parsing `--log`
+/// and for generating the `allowed:` list in the arg parser.
+const logLevelNames = {
+  'all': Level.ALL,
+  'finest': Level.FINEST,
+  'finer': Level.FINER,
+  'fine': Level.FINE,
+  'config': Level.CONFIG,
+  'info': Level.INFO,
+  'warning': Level.WARNING,
+  'severe': Level.SEVERE,
+  'off': Level.OFF,
+};
 
 /// Parses the raw `--providers` option value into a validated [Set<Provider>].
 ///
@@ -40,4 +58,18 @@ SyncMode parseModeValue(String? raw) {
   final value = (raw ?? '').trim();
   if (value.isEmpty) return SyncMode.soft;
   return SyncMode.fromName(value); // throws ArgumentError on bad name
+}
+
+/// Parses the raw `--log` option value into a [Level].
+///
+/// Returns [Level.INFO] when [raw] is null or empty.
+/// Throws [ArgumentError] if the name is unknown.
+Level parseLogLevelValue(String? raw) {
+  final value = (raw ?? '').trim().toLowerCase();
+  if (value.isEmpty) return Level.INFO;
+  final level = logLevelNames[value];
+  if (level == null) {
+    throw ArgumentError('Unknown log level "$raw". Valid levels: ${logLevelNames.keys.join(', ')}');
+  }
+  return level;
 }

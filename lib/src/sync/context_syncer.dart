@@ -66,7 +66,7 @@ class ContextSyncer {
       if (global && provider == Provider.antigravity) continue;
 
       createSymlink(target, linkPath);
-      _log.info('  ${provider.name}: $linkPath → $target');
+      _log.fine('  ${provider.name}: $linkPath → $target');
       created++;
     }
 
@@ -87,7 +87,7 @@ class ContextSyncer {
       if (linkPath == null) continue;
 
       deleteIfExists(linkPath);
-      _log.info('  ${provider.name}: removed $linkPath');
+      _log.fine('  ${provider.name}: removed $linkPath');
       deleted++;
     }
     if (deleted > 0) {
