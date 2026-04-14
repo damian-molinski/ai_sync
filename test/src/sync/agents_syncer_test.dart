@@ -113,6 +113,19 @@ void main() {
       expect(content, isNot(contains('agents:')));
     });
 
+    test('Gemini output maps canonical tools and emits tools list', () {
+      syncer.run(global: false, providers: Provider.values.toSet());
+      final file = File(
+        p.join(tempRoot.path, '.gemini', 'agents', 'flutter-feasibility-assessor.md'),
+      );
+      final content = file.readAsStringSync();
+      expect(content, contains('tools:'));
+      expect(content, contains('- read_file'));
+      expect(content, contains('- grep_search'));
+      expect(content, contains('- glob'));
+      expect(content, contains('- dart-sdk-mcp-server/pub_dev_search'));
+    });
+
     test('Antigravity has no agents output', () {
       syncer.run(global: false, providers: Provider.values.toSet());
       final antigravityDir = Directory(p.join(tempRoot.path, '.agents', 'agents'));

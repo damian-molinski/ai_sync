@@ -53,9 +53,9 @@ const _geminiOnlyKeys = {'temperature', 'timeout_mins', 'kind'};
 /// and strips all Copilot/Claude-specific fields.
 ///
 /// Sources:
-///   Copilot: https://docs.github.com/en/copilot/reference/customization-cheat-sheet
+///   Copilot: https://docs.github.com/en/copilot/reference/custom-agents-configuration#tool-aliases
 ///   Gemini:  https://geminicli.com/docs/core/subagents/
-///   Claude:  https://code.claude.com/docs/en/sub-agents
+///   Claude:  https://code.claude.com/docs/en/tools-reference
 class AgentsSyncer {
   AgentsSyncer(this._source, {Directory? rootDir})
     : _rootDir = rootDir?.path ?? Directory.current.path;
@@ -134,7 +134,7 @@ class AgentsSyncer {
 
   // ---------------------------------------------------------------------------
   // Copilot — strip Claude/Gemini keys from raw frontmatter; preserve formatting
-  // Source: https://docs.github.com/en/copilot/reference/customization-cheat-sheet
+  // Source: https://docs.github.com/en/copilot/reference/custom-agents-configuration#tool-aliases
   // ---------------------------------------------------------------------------
   String _copilotContent(AgentConfig agent) {
     final strippedFrontmatter = _stripKeysFromRaw(agent.rawFrontmatterText, {
@@ -146,7 +146,7 @@ class AgentsSyncer {
 
   // ---------------------------------------------------------------------------
   // Claude — map tools, merge agents as Agent(name), strip non-Claude fields
-  // Source: https://code.claude.com/docs/en/sub-agents
+  // Source: https://code.claude.com/docs/en/tools-reference
   // ---------------------------------------------------------------------------
   String _claudeContent(AgentConfig agent) {
     final fields = <String, Object?>{};
@@ -180,8 +180,10 @@ class AgentsSyncer {
   }
 
   // ---------------------------------------------------------------------------
-  // Gemini — slug name, map maxTurns → max_turns, strip Copilot/Claude fields
-  // Source: https://geminicli.com/docs/core/subagents/
+  // Gemini — slug name, map maxTurns → max_turns, map tools, strip Copilot/Claude fields
+  // Sources:
+  //   https://geminicli.com/docs/core/subagents/
+  //   https://github.com/google-gemini/gemini-cli/blob/main/packages/core/src/tools/definitions/base-declarations.ts
   // Gemini name must be slug format (lowercase letters, numbers, hyphens, underscores)
   // ---------------------------------------------------------------------------
   String _geminiContent(AgentConfig agent) {
@@ -192,6 +194,10 @@ class AgentsSyncer {
     final fields = <String, Object?>{};
     fields['name'] = stem;
     if (agent.description != null) fields['description'] = agent.description;
+    final geminiTools = buildGeminiToolsList(agent);
+    if (geminiTools.isNotEmpty) {
+      fields['tools'] = geminiTools;
+    }
     if (agent.model != null) fields['model'] = agent.model;
     if (agent.temperature != null) fields['temperature'] = agent.temperature;
     if (agent.maxTurns != null) fields['max_turns'] = agent.maxTurns; // renamed
