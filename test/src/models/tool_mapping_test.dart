@@ -102,6 +102,7 @@ void main() {
     });
     test('todo → write_todos', () => expect(mapToolToGemini('todo'), equals(['write_todos'])));
     test('agent → dropped', () => expect(mapToolToGemini('agent'), isEmpty));
+    test('* → omitted tools for Gemini', () => expect(mapToolToGemini('*'), isEmpty));
     test('vscode/* → dropped', () {
       expect(mapToolToGemini('vscode/askQuestions'), isEmpty);
     });
@@ -143,6 +144,11 @@ void main() {
 
     test('drops agent and vscode/*', () {
       final config = makeAgent(tools: ['agent', 'vscode/askQuestions']);
+      expect(buildGeminiToolsList(config), isEmpty);
+    });
+
+    test('canonical * omits tools for Gemini', () {
+      final config = makeAgent(tools: ['*']);
       expect(buildGeminiToolsList(config), isEmpty);
     });
 

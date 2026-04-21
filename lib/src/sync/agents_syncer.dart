@@ -277,6 +277,7 @@ class AgentsSyncer {
     // Quote if value contains YAML-special characters or is already quoted.
     if (value.contains(':') ||
         value.contains('#') ||
+        value.contains('*') ||
         value.contains('"') ||
         value.contains("'") ||
         value.startsWith('{') ||
