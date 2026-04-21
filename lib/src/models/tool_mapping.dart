@@ -48,6 +48,8 @@ List<String> mapToolToGemini(String canonical) => switch (canonical) {
   'todo' => ['write_todos'],
   // Gemini subagents cannot call other subagents.
   'agent' => [],
+  // Omit `tools` for canonical wildcard; Gemini then uses default/all tools.
+  '*' => [],
   _ when canonical.startsWith('vscode/') => [],
   _ => [canonical],
 };

@@ -126,6 +126,15 @@ void main() {
       expect(content, contains('- dart-sdk-mcp-server/pub_dev_search'));
     });
 
+    test('Gemini output omits tools for canonical wildcard', () {
+      syncer.run(global: false, providers: Provider.values.toSet());
+      final file = File(p.join(tempRoot.path, '.gemini', 'agents', 'estimation-expert.md'));
+      expect(file.existsSync(), isTrue);
+      final content = file.readAsStringSync();
+      expect(content, contains('name: estimation-expert'));
+      expect(content, isNot(contains('\ntools:\n')));
+    });
+
     test('Antigravity has no agents output', () {
       syncer.run(global: false, providers: Provider.values.toSet());
       final antigravityDir = Directory(p.join(tempRoot.path, '.agents', 'agents'));
